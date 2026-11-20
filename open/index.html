@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d19">
+  <meta name="description" content="Open a shared anime or movie in AnimePlex.">
+  <meta property="og:title" content="Open in AnimePlex">
+  <meta property="og:description" content="A title has been shared with you on AnimePlex.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src https: http:; base-uri 'none'; form-action 'none'">
+  <title>Open in AnimePlex</title>
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 65% 4%,#362159,transparent 55%),#090d19;color:#f7f4ff}
+    main{width:min(100%,480px);background:#171a2de8;border:1px solid #ffffff26;border-radius:25px;padding:30px 25px 25px;text-align:center;box-shadow:0 28px 70px #0006}
+    .logo{width:54px;height:54px;display:inline-grid;place-items:center;border-radius:16px;background:linear-gradient(135deg,#8966ff,#e74b9a);font-weight:800;font-size:26px}
+    .eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#b7a5ff;margin:15px 0 23px}
+    .cover{width:130px;aspect-ratio:2/3;object-fit:cover;border-radius:12px;border:1px solid #ffffff21;background:#29243d;box-shadow:0 12px 35px #0006}
+    .cover[hidden],.button[hidden]{display:none}
+    h1{font-size:clamp(23px,5vw,30px);line-height:1.2;margin:18px 0 9px;overflow-wrap:anywhere}
+    p{color:#abb4ca;font-size:15px;line-height:1.6;margin:0 0 24px}
+    .button{display:block;padding:15px;border-radius:14px;text-decoration:none;font-weight:700;color:white;background:linear-gradient(110deg,#7759ea,#bb519d)}
+    .hint{color:#9aa4be;margin:16px 0 0;font-size:13px}
+    .secondary{display:block;margin:20px auto 0;color:#cfc0ff;font-size:14px}
+    .footer{font-size:12px;color:#717b97;margin-top:27px}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo" aria-label="AnimePlex">A</div>
+    <div class="eyebrow">Shared with AnimePlex</div>
+    <img id="cover" class="cover" alt="Cover art" hidden>
+    <h1 id="title">Open in AnimePlex</h1>
+    <p id="description">Open the shared title in the AnimePlex app.</p>
+    <a id="open" class="button" href="#" hidden>Open in AnimePlex</a>
+    <p id="hint" class="hint">The AnimePlex app must be installed on your device.</p>
+    <a class="secondary" href="/">AnimePlex home</a>
+    <div class="footer">AnimePlex • Share links</div>
+  </main>
+  <script>
+    (() => {
+      'use strict';
+      const query = new URLSearchParams(location.search);
+      const source = query.get('s');
+      const url = query.get('u');
+      const title = query.get('t');
+      const cover = query.get('c');
+      const titleEl = document.getElementById('title');
+      const descEl = document.getElementById('description');
+      const openEl = document.getElementById('open');
+      const hintEl = document.getElementById('hint');
+
+      if (!source || !url || source.length > 400 || url.length > 8192) {
+        titleEl.textContent = 'No shared title found';
+        descEl.textContent = 'Open an AnimePlex share link to view its anime or movie.';
+        hintEl.textContent = 'This page is ready for AnimePlex share links.';
+        return;
+      }
+
+      if (title) {
+        titleEl.textContent = title.substring(0, 250);
+        document.title = title.substring(0, 120) + ' · AnimePlex';
+      }
+      descEl.textContent = 'Continue in AnimePlex to view this title and its episodes.';
+      if (cover) {
+        try {
+          const imageUrl = new URL(cover);
+          if (imageUrl.protocol === 'https:') {
+            const img = document.getElementById('cover');
+            img.src = imageUrl.href;
+            img.hidden = false;
+            img.onerror = () => { img.hidden = true; };
+          }
+        } catch (_) { /* Invalid image URL: keep the clean fallback. */ }
+      }
+
+      const deeplink = new URLSearchParams();
+      for (const key of ['s', 'u', 't', 'y', 'c', 'p']) {
+        if (query.has(key)) deeplink.set(key, query.get(key) || '');
+      }
+      const target = 'animeplex://open?' + deeplink.toString();
+      openEl.href = target;
+      openEl.hidden = false;
+      hintEl.textContent = 'If the app does not open automatically, tap the button above.';
+
+      // Browsers differ on automatic external-app launches; the explicit button
+      // always remains available as a user-initiated fallback.
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        setTimeout(() => { if (!document.hidden) location.href = target; }, 450);
+      }
+    })();
+  </script>
+</body>
+</html>
